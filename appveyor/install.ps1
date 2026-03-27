@@ -109,6 +109,8 @@ function InstallPython ($python_version, $architecture, $python_home) {
     }
     if ($architecture -eq "32") {
         $platform_suffix = ""
+    } elseif ($architecture -eq "ARM64") {
+        $platform_suffix = "arm64"
     } else {
         $platform_suffix = "amd64"
     }

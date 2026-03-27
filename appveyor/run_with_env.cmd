@@ -81,6 +81,10 @@ IF %PYTHON_ARCH% == 64 (
         ECHO Executing: %COMMAND_TO_RUN%
         call %COMMAND_TO_RUN% || EXIT 1
     )
+) ELSE IF %PYTHON_ARCH% == ARM64 (
+    ECHO Using default MSVC build environment for ARM64 architecture
+    ECHO Executing: %COMMAND_TO_RUN%
+    call %COMMAND_TO_RUN% || EXIT 1
 ) ELSE (
     ECHO Using default MSVC build environment for 32 bit architecture
     ECHO Executing: %COMMAND_TO_RUN%
