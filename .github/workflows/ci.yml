@@ -452,7 +452,7 @@ jobs:
       - name: "Print known failures"
         shell: pwsh
         run: |
-          python -mgevent.tests.known_failures
+          python -c "import runpy; runpy.run_module('gevent.tests.known_failures', run_name='__main__')"
       - name: "Tests: Basic"
         shell: pwsh
         env:
