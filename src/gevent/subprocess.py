@@ -1015,6 +1015,9 @@ class Popen(object):
             self.wait()
 
     def _gevent_result_wait(self, timeout=None, raise_exc=True):
+        # Treat negative timeout same as None (wait forever), matching CPython behavior
+        if timeout is not None and timeout < 0:
+            timeout = None
         result = self.result.wait(timeout=timeout)
         if raise_exc and timeout is not None and not self.result.ready():
             raise TimeoutExpired(self.args, timeout)
