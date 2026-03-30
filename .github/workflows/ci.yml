@@ -455,7 +455,7 @@ jobs:
         env:
           GEVENTTEST_USE_RESOURCES: "-network"
         run: |
-          python -m gevent.tests --second-chance
+          python -m gevent.tests --second-chance --config known_failures.py
 
       - name: Publish package to PyPI
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
