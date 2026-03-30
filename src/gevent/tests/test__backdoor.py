@@ -52,6 +52,9 @@ class SocketWithBanner(socket.socket):
     "problem I'd expect to see more failures, so it is probably specific to resource management "
     "in this test."
 )
+@greentest.skipOnWinArm64(
+    "Same socket hanging issue seen on AppVeyor also occurs on Windows ARM64. "
+)
 class Test(greentest.TestCase):
 
     __timeout__ = 10

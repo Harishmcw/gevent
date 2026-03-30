@@ -36,6 +36,7 @@ skipOnMac = _do_not_skip
 skipOnMacOnCI = _do_not_skip
 skipOnWindows = _do_not_skip
 skipOnAppVeyor = _do_not_skip
+skipOnWinArm64 = _do_not_skip
 skipOnCI = _do_not_skip
 skipOnManylinux = _do_not_skip
 
@@ -78,6 +79,8 @@ if sysinfo.RUNNING_ON_APPVEYOR:
     # separately on windows in a more stable environment.
     skipOnAppVeyor = unittest.skip
 
+if sysinfo.WIN_ARM64:
+    skipOnWinArm64 = unittest.skip
 
 if sysinfo.RUNNING_ON_CI:
     skipOnCI = unittest.skip

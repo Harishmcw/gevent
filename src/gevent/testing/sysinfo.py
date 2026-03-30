@@ -20,6 +20,7 @@
 import errno
 import os
 import sys
+import platform
 
 import gevent.core
 from gevent import _compat as gsysinfo
@@ -32,6 +33,7 @@ CPYTHON = not PYPY
 
 # Platform/operating system
 WIN = gsysinfo.WIN
+WIN_ARM64 = WIN and platform.machine() == 'ARM64'
 LINUX = gsysinfo.LINUX
 OSX = gsysinfo.OSX
 
