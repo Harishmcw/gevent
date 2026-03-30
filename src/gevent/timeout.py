@@ -288,8 +288,6 @@ class Timeout(BaseException):
         # under PyPy in synthetic benchmarks it makes no difference.
         if timeout is None:
             return _FakeTimer
-        if timeout < 0:
-            return _FakeTimer
         return Timeout.start_new(timeout, exception, ref, _one_shot=True)
 
     @property
