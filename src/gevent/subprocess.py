@@ -1342,12 +1342,26 @@ class Popen(object):
             self.threadpool.spawn(self._blocking_wait).rawlink(self.result)
 
         def wait(self, timeout=None, _raise_exc=True):
-            """Wait for child process to terminate.  Returns returncode
-            attribute."""
+            """Wait for child process to terminate.  Returns returncode attribute."""
             if self.returncode is None:
                 if not self._waiting:
                     self._waiting = True
                     self._wait()
+            # Match CPython behavior: timeout <= 0 means non-blocking poll
+            # i.e. call WaitForSingleObject(handle, 0) once and raise TimeoutExpired
+            # if process is not done. This matches CPython's _wait() on Windows.
+            if timeout is not None and timeout <= 0:
+                from gevent import sleep as _sleep
+                _sleep(0)  # yield to event loop so threadpool can finish
+                if self.returncode is None:
+                    if _winapi.WaitForSingleObject(self._handle, 0) != _winapi.WAIT_OBJECT_0:
+                        if _raise_exc:
+                            raise TimeoutExpired(self.args, timeout)
+                        return self.returncode
+                    # Process done, get exit code but don't set self.result
+                    # let threadpool _blocking_wait handle that properly
+                    self.returncode = _winapi.GetExitCodeProcess(self._handle)
+                return self.returncode
             return self._gevent_result_wait(timeout, _raise_exc)
 
         def send_signal(self, sig):
