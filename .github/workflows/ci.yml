@@ -321,9 +321,8 @@ jobs:
           ls -l dist
           twine check dist/*whl
       - name: Cache ~/.ccache
-        if: ${{ !startsWith(runner.os, 'Windows') }}
+        if: ${{ always() && !startsWith(runner.os, 'Windows') }}
         uses: actions/cache/save@v5
-        if: always()
         with:
           path: ~/.ccache/**
           key: ${{ runner.os }}-ccache2-${{ matrix.python-version }}
