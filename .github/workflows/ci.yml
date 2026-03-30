@@ -46,15 +46,10 @@ env:
   # caching
   ###
   # CCACHE_DIR: ~/.ccache # Using ~ here makes it not find its cache.
-  # NOTE: CC is set to "ccache gcc" only on Linux/macOS.
-  # Windows runners override this in the "Set up build env (Windows)" step.
   CC: "ccache gcc"
   CCACHE_NOCPP2: true
   CCACHE_SLOPPINESS: file_macro,time_macros,include_file_ctime,include_file_mtime
   CCACHE_NOHASHDIR: true
-  # Disable external network tests on Windows, matching AppVeyor's behaviour
-  # to avoid flaky DNS failures on Windows CI runners.
-  GEVENTTEST_USE_RESOURCES: "-network"
 
   #
 
@@ -101,7 +96,7 @@ jobs:
         # XXX: August 2025: ``macos-latest`` switched from macOS 14 to macOS 15.5;
         # at that time, we started getting timeouts performing DNS lookups. I can't
         # replicate those locally on my own macOS 15 machine.
-        os: [macos-14, ubuntu-latest, windows-11-arm]
+        os: [macos-14, ubuntu-latest]
         exclude:
           # The bulk of the testing is on Linux and Windows (appveyor).
           # Experience shows that it's sufficient to only test the latest
@@ -127,18 +122,6 @@ jobs:
           - os: macos-14 # Same again
             python-version: "3.10.18"
 
-          # Windows on Arm (WoA) exclusions.
-          # PyPy does not have a WoA build.
-          - os: windows-11-arm
-            python-version: "pypy-3.11-v7.3.20"
-          # 3.10 is borderline on WoA; skip for stability.
-          - os: windows-11-arm
-            python-version: "3.10.18"
-          # Free-threaded build is disabled above; exclude explicitly
-          # here too in case it is re-enabled in future.
-          - os: windows-11-arm
-            python-version: "3.14t"
-
     steps:
       - name: checkout
         uses: actions/checkout@v6
@@ -161,26 +144,6 @@ jobs:
           echo CFLAGS=$CFLAGS -Wno-parentheses-equality >>$GITHUB_ENV
           echo CCACHE_DIR=$HOME/.ccache >>$GITHUB_ENV
           mkdir -p $HOME/.ccache
-
-      - name: Set up build env (Windows)
-        # Override gcc/ccache-specific env vars that are invalid under MSVC.
-        # We use the MSVC toolchain that ships with the windows-11-arm runner
-        # (Visual Studio 2022), matching what AppVeyor does for x64.
-        # ccache is not used on Windows to keep things simple.
-        if: startsWith(runner.os, 'Windows')
-        shell: pwsh
-        run: |
-          # Replace the ccache gcc wrapper with MSVC (cl.exe).
-          echo "CC=cl" >> $env:GITHUB_ENV
-          # GCC-style CFLAGS are invalid under MSVC; clear them.
-          echo "CFLAGS=" >> $env:GITHUB_ENV
-          # Use an MSVC-compatible optimisation flag instead of -Ofast/-O3.
-          echo "CPPFLAGS=/O2 /DEV_VERIFY=1" >> $env:GITHUB_ENV
-          # Disable ccache env vars so they don't confuse the build.
-          echo "CCACHE_NOCPP2=" >> $env:GITHUB_ENV
-          echo "CCACHE_SLOPPINESS=" >> $env:GITHUB_ENV
-          echo "CCACHE_NOHASHDIR=" >> $env:GITHUB_ENV
-
       - name: Set coverage status
         # coverage is too slow on PyPy. We can't submit it from macOS (see that action),
         # so don't bother taking the speed hit there either.
@@ -197,8 +160,6 @@ jobs:
       # the cache.
       ###
       - name: Cache ~/.ccache
-        # ccache is only used on Linux and macOS.
-        if: ${{ !startsWith(runner.os, 'Windows') }}
         uses: actions/cache@v5
         # This is repeated in an explicit save always step below
         # because normally it won't save anything if there's a cache hit!
@@ -211,8 +172,6 @@ jobs:
       - name: Cache config.cache
         # Store the configure caches. Having a cache can speed up c-ares
         # configure from 2-3 minutes to 20 seconds.
-        # Not applicable on Windows (no autoconf).
-        if: ${{ !startsWith(runner.os, 'Windows') }}
         uses: actions/cache@v5
         with:
           path: deps/*/config.cache
@@ -239,8 +198,7 @@ jobs:
       #   UnicodeEncodeError: 'ascii' codec can't encode character u'\u2588' in position 6: ordinal not in range(128)
       # when downloading files. This started sometime in mid 2020. It's from
       # pip's vendored progress.bar class.
-      - name: Install dependencies (non-Windows)
-        if: ${{ !startsWith(runner.os, 'Windows') }}
+      - name: Install dependencies
         run: |
           pip install -U pip
           pip install -U -q setuptools wheel twine
@@ -249,21 +207,8 @@ jobs:
           # Use a debug version of greenlet to help catch any errors earlier.
           CFLAGS="$CFLAGS -Og -g -UNDEBUG" pip install -v --no-binary :all: 'greenlet>=3.2.0;platform_python_implementation=="CPython" '
 
-      - name: Install dependencies (Windows)
-        # On Windows we skip --no-binary :all: for greenlet because building
-        # from source requires a Unix shell. This matches what AppVeyor does:
-        # install normally from wheels. The debug CFLAGS tweak is also skipped.
-        if: startsWith(runner.os, 'Windows')
-        shell: pwsh
-        run: |
-          python -m pip install -U pip
-          python -m pip install -U setuptools wheel twine
-          python -m pip install -q -U 'cffi;platform_python_implementation=="CPython"'
-          python -m pip install -q -U 'cython>=3.2.1'
-          python -m pip install -U 'greenlet>=3.2.0;platform_python_implementation=="CPython"'
-
-      - name: Build gevent (non-Mac, non-Windows)
-        if: ${{ !startsWith(runner.os, 'Mac') && !startsWith(runner.os, 'Windows') }}
+      - name: Build gevent (non-Mac)
+        if: ${{ ! startsWith(runner.os, 'Mac') }}
         run: |
           # Next, build the wheel *in place*. This helps ccache, and also lets us cache the configure
           # output (pip install uses a random temporary directory, making this difficult)
@@ -303,26 +248,13 @@ jobs:
           ARCHFLAGS: "-arch x86_64 -arch arm64"
           # Force the wheel tag.
           _PYTHON_HOST_PLATFORM: "macosx-11.0-universal2"
-
-      - name: Build gevent (Windows)
-        # Build using MSVC, the same compiler toolchain AppVeyor uses for x64.
-        # CFLAGS/CPPFLAGS are already overridden to MSVC-safe values by the
-        # "Set up build env (Windows)" step above.
-        if: startsWith(runner.os, 'Windows')
-        shell: pwsh
-        run: |
-          python setup.py build_ext -i
-          python setup.py bdist_wheel
-          Write-Host "Done building"
-          Get-ChildItem dist
-
       - name: Check gevent build
         run: |
           ls -l dist
           twine check dist/*whl
       - name: Cache ~/.ccache
-        if: ${{ always() && !startsWith(runner.os, 'Windows') }}
         uses: actions/cache/save@v5
+        if: always()
         with:
           path: ~/.ccache/**
           key: ${{ runner.os }}-ccache2-${{ matrix.python-version }}
@@ -341,31 +273,11 @@ jobs:
         run: |
           twine upload --skip-existing dist/*
 
-      - name: Publish package to PyPI (Windows)
-        # Publish WoA wheels on tag pushes, mirroring what the Mac step does
-        # and what AppVeyor's deploy_script does for x64 wheels.
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && startsWith(runner.os, 'Windows')
-        shell: pwsh
-        env:
-          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-        run: |
-          twine upload --skip-existing dist/*
-
-      - name: Install gevent (non-Windows)
-        if: ${{ !startsWith(runner.os, 'Windows') }}
+      - name: Install gevent
         run: |
           WHL=$(ls dist/*whl)
           pip install -U "$WHL[test]"
-
-      - name: Install gevent (Windows)
-        if: startsWith(runner.os, 'Windows')
-        shell: pwsh
-        run: |
-          $whl = (Get-ChildItem dist\*.whl | Select-Object -First 1).FullName
-          python -m pip install -U "$whl[test]"
-
       - name: Report environment details
-        if: ${{ !startsWith(runner.os, 'Windows') }}
         run: |
           python --version
           echo "Greenlet:"; python -c 'import greenlet; print(greenlet, greenlet.__version__)'
@@ -377,17 +289,6 @@ jobs:
           ccache --version
           ccache -s -v
 
-      - name: Report environment details (Windows)
-        # Mirror what AppVeyor's test_script does for pre-test environment reporting.
-        if: startsWith(runner.os, 'Windows')
-        shell: pwsh
-        run: |
-          python --version
-          python -c "import greenlet; print(greenlet, greenlet.__version__)"
-          python -c "import gevent.core; print(gevent.core.loop)"
-          python -c "import gevent; print(gevent.config.settings['resolver'].get_options())"
-          python -c "import gevent.resolver.cares; print(gevent.resolver.cares)"
-          python -c "from gevent._compat import get_clock_info; print(get_clock_info('perf_counter'))"
 
       - name: "Tests: Basic"
         run: |
@@ -453,7 +354,7 @@ jobs:
         run: |
           python -m gevent.tests --second-chance $G_USE_COV
       - name: Report coverage
-        if: ${{ !startsWith(matrix.python-version, 'pypy') && !startsWith(runner.os, 'Windows') }}
+        if: ${{ !startsWith(matrix.python-version, 'pypy')  }}
         run: |
           python -m coverage combine || true
           python -m coverage report -i || true
