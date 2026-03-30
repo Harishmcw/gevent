@@ -449,7 +449,10 @@ jobs:
           python -c "import gevent.core; print(gevent.core.loop)"
           python -c "import gevent.resolver.cares; print(gevent.resolver.cares)"
           python -c "from gevent._compat import get_clock_info; print(get_clock_info('perf_counter'))"
-
+      - name: "Print known failures"
+        shell: pwsh
+        run: |
+          python -mgevent.tests.known_failures
       - name: "Tests: Basic"
         shell: pwsh
         env:
