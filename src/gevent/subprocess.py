@@ -1015,9 +1015,6 @@ class Popen(object):
             self.wait()
 
     def _gevent_result_wait(self, timeout=None, raise_exc=True):
-        # Treat negative timeout same as None (wait forever), matching CPython behavior
-        if timeout is not None and timeout < 0:
-            timeout = None
         result = self.result.wait(timeout=timeout)
         if raise_exc and timeout is not None and not self.result.ready():
             raise TimeoutExpired(self.args, timeout)
@@ -1351,6 +1348,17 @@ class Popen(object):
                 if not self._waiting:
                     self._waiting = True
                     self._wait()
+            # Match CPython behavior: timeout <= 0 is a non-blocking poll
+            # i.e. check once with WaitForSingleObject(handle, 0) and if
+            # process is not done, raise TimeoutExpired immediately
+            if timeout is not None and timeout <= 0:
+                if self.returncode is None:
+                    if WaitForSingleObject(self._handle, 0) == WAIT_OBJECT_0:
+                        self.returncode = GetExitCodeProcess(self._handle)
+                        self.result.set(self.returncode)
+                if _raise_exc and self.returncode is None:
+                    raise TimeoutExpired(self.args, timeout)
+                return self.returncode
             return self._gevent_result_wait(timeout, _raise_exc)
 
         def send_signal(self, sig):
