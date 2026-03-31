@@ -86,6 +86,7 @@ WIN = _AttrCondition('WIN')
 APPVEYOR = _AttrCondition('RUNNING_ON_APPVEYOR')
 TRAVIS = _AttrCondition('RUNNING_ON_TRAVIS')
 CI = _AttrCondition('RUNNING_ON_CI')
+WIN_GHA = _AttrCondition('RUNNING_ON_GITHUB_ACTIONS_WINDOWS')
 LEAKTEST = _AttrCondition('RUN_LEAKCHECKS')
 COVERAGE = _AttrCondition('RUN_COVERAGE')
 RESOLVER_NOT_SYSTEM = _AttrCondition('RESOLVER_NOT_SYSTEM')
@@ -359,8 +360,10 @@ class Definitions(metaclass=DefinitionsMeta):
         But it also takes nearly that long in 3.7. 3.6 and earlier are much faster.
 
         It also takes just over 100s on PyPy 3.7.
+
+        On Windows GitHub Actions, this consistently times out beyond the default 100s limit.
         """,
-        when=(PYPY & TRAVIS & LIBUV) | PY380_EXACTLY,
+        when=(PYPY & TRAVIS & LIBUV) | PY380_EXACTLY | WIN_GHA,
         # https://bitbucket.org/pypy/pypy/issues/2769/systemerror-unexpected-internal-exception
         run_alone=(CI & LEAKTEST & PY3) | (PYPY & LIBUV),
         # This often takes much longer on PyPy on CI.
