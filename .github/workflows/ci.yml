@@ -470,6 +470,14 @@ jobs:
 
   test_winx64:
     runs-on: windows-latest
+    env:
+      PYTHONHASHSEED: 8675309
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+      PIP_UPGRADE_STRATEGY: eager
+      PIP_NO_WARN_SCRIPT_LOCATION: 1
+      GEVENTTEST_USE_RESOURCES: "-network"
+      NWORKERS: 2
     strategy:
       fail-fast: false
       matrix:
