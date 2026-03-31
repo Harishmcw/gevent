@@ -396,13 +396,6 @@ jobs:
     runs-on: windows-11-arm
     env:
       APPVEYOR: "1"
-      PYTHONHASHSEED: 8675309
-      PYTHONUNBUFFERED: 1
-      PYTHONDONTWRITEBYTECODE: 1
-      GEVENTTEST_USE_RESOURCES: "-network"
-      NWORKERS: 2
-      PIP_NO_WARN_SCRIPT_LOCATION: 1
-      PIP_UPGRADE_STRATEGY: eager
     strategy:
       fail-fast: false
       matrix:
@@ -481,13 +474,6 @@ jobs:
     runs-on: windows-latest
     env:
       APPVEYOR: "1"
-      PYTHONHASHSEED: 8675309
-      PYTHONUNBUFFERED: 1
-      PYTHONDONTWRITEBYTECODE: 1
-      GEVENTTEST_USE_RESOURCES: "-network"
-      NWORKERS: 2
-      PIP_NO_WARN_SCRIPT_LOCATION: 1
-      PIP_UPGRADE_STRATEGY: eager
     strategy:
       fail-fast: false
       matrix:
