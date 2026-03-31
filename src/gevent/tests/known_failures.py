@@ -250,12 +250,12 @@ class Definitions(metaclass=DefinitionsMeta):
         On PyPy on Travis, this fails to get the correct results,
         sometimes. I can't reproduce locally
         """,
-        when=APPVEYOR | WIN| (PYPY & TRAVIS)
+        when=APPVEYOR | (PYPY & TRAVIS)
     )
 
     # This one sometimes randomly closes connections, but no indication
     # of a server crash, only a client side close.
-    test__server_pywsgi = Flaky(when=APPVEYOR| WIN)
+    test__server_pywsgi = Flaky(when=APPVEYOR)
 
     test_threading = Multi().ignored(
         """
@@ -266,7 +266,7 @@ class Definitions(metaclass=DefinitionsMeta):
         https://ci.appveyor.com/project/denik/gevent/build/1.0.1277/job/tpvhesij5gldjxqw#L1190
         Ignored because it takes two minutes to time out.
         """,
-        when=(APPVEYOR|WIN) & LIBUV & PYPY
+        when=APPVEYOR & LIBUV & PYPY
     ).flaky(
         """
         test_set_and_clear in Py3 relies on 5 threads all starting and
@@ -276,7 +276,7 @@ class Definitions(metaclass=DefinitionsMeta):
         too tight for appveyor. This happens even if Event isn't
         monkey-patched
         """,
-        when=(APPVEYOR|WIN) & PY3
+        when=APPVEYOR & PY3
     )
 
     test_ftplib = Flaky(
@@ -293,7 +293,7 @@ class Definitions(metaclass=DefinitionsMeta):
         XXX: On Jan 3 2016 this suddenly started passing on Py27/64; no idea why, the python version
         was 2.7.11 before and after.
         """,
-        when=(APPVEYOR|WIN) & BIT_64
+        when=APPVEYOR & BIT_64
     )
 
 
@@ -305,13 +305,13 @@ class Definitions(metaclass=DefinitionsMeta):
         # Partial workaround for the _testcapi issue on PyPy,
         # but also because signal delivery can sometimes be slow, and this
         # spawn processes of its own
-        run_alone=APPVEYOR|WIN,
+        run_alone=APPVEYOR,
     ).ignored(
         """
         This fails to run a single test. It looks like just importing the module
         can hang. All I see is the output from patch_all()
         """,
-        when=(APPVEYOR|WIN) & PYPY3
+        when=APPVEYOR & PYPY3
     )
 
     test__monkey_sigchld_2 = Ignored(
@@ -412,7 +412,7 @@ class Definitions(metaclass=DefinitionsMeta):
         """
         Timing issues on appveyor.
         """,
-        when=PY3 & (APPVEYOR|WIN),
+        when=PY3 & APPVEYOR,
         ignore_coverage=ALWAYS,
     )
 
@@ -422,7 +422,7 @@ class Definitions(metaclass=DefinitionsMeta):
         with PID XXX could not be terminated. Reason: There is no
         running instance of the task.",
         """,
-        when=(APPVEYOR|WIN) | COVERAGE
+        when=APPVEYOR | COVERAGE
     )
 
     test__issue302monkey = test__threading_vs_settrace = Flaky(
@@ -462,7 +462,7 @@ class Definitions(metaclass=DefinitionsMeta):
         """
         On a heavily loaded box, these can all take upwards of 200s.
         """,
-        when=(CI & LEAKTEST) | (PYPY3 & (APPVEYOR|WIN))
+        when=(CI & LEAKTEST) | (PYPY3 & APPVEYOR)
     )
 
     test_socket = RunAlone(
