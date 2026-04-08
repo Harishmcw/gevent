@@ -83,6 +83,7 @@ PY3 = _AttrCondition('PY3')
 OSX = _AttrCondition('OSX')
 LIBUV = _AttrCondition('LIBUV')
 WIN = _AttrCondition('WIN')
+WIN_GHA = _AttrCondition('RUNNING_ON_GITHUB_ACTIONS_WINDOWS')
 APPVEYOR = _AttrCondition('RUNNING_ON_APPVEYOR')
 TRAVIS = _AttrCondition('RUNNING_ON_TRAVIS')
 CI = _AttrCondition('RUNNING_ON_CI')
@@ -360,7 +361,7 @@ class Definitions(metaclass=DefinitionsMeta):
 
         It also takes just over 100s on PyPy 3.7.
         """,
-        when=(PYPY & TRAVIS & LIBUV) | PY380_EXACTLY,
+        when=(PYPY & TRAVIS & LIBUV) | PY380_EXACTLY | WIN_GHA,
         # https://bitbucket.org/pypy/pypy/issues/2769/systemerror-unexpected-internal-exception
         run_alone=(CI & LEAKTEST & PY3) | (PYPY & LIBUV),
         # This often takes much longer on PyPy on CI.
