@@ -392,7 +392,7 @@ jobs:
         with:
           parallel-finished: true
 
-  test_woa:
+  test_win_arm64:
     runs-on: windows-11-arm
     name: test(${{ matrix.python-version }}, windows-11-arm)
     env:
