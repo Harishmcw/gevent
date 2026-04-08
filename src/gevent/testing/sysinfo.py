@@ -20,7 +20,6 @@
 import errno
 import os
 import sys
-import platform
 
 import gevent.core
 from gevent import _compat as gsysinfo
@@ -33,7 +32,6 @@ CPYTHON = not PYPY
 
 # Platform/operating system
 WIN = gsysinfo.WIN
-WIN_ARM64 = WIN and platform.machine() == 'ARM64'
 LINUX = gsysinfo.LINUX
 OSX = gsysinfo.OSX
 
@@ -101,7 +99,6 @@ else:
 
 # We define GitHub actions to be similar to travis
 RUNNING_ON_GITHUB_ACTIONS = os.environ.get('GITHUB_ACTIONS')
-RUNNING_ON_GITHUB_ACTIONS_WINDOWS = RUNNING_ON_GITHUB_ACTIONS and WIN
 RUNNING_ON_TRAVIS = os.environ.get('TRAVIS') or RUNNING_ON_GITHUB_ACTIONS
 RUNNING_ON_APPVEYOR = os.environ.get('APPVEYOR')
 RUNNING_ON_CI = RUNNING_ON_TRAVIS or RUNNING_ON_APPVEYOR

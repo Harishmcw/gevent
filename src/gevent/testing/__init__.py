@@ -54,7 +54,6 @@ else:
 
 from .sysinfo import VERBOSE
 from .sysinfo import WIN
-from .sysinfo import WIN_ARM64
 from .sysinfo import LINUX
 from .sysinfo import OSX
 from .sysinfo import LIBUV
@@ -89,7 +88,6 @@ from .sysinfo import CONN_ABORTED_ERRORS
 
 from .skipping import skipOnWindows
 from .skipping import skipOnAppVeyor
-from .skipping import skipOnWinArm64
 from .skipping import skipOnCI
 from .skipping import skipOnPyPy3OnCI
 from .skipping import skipOnPyPy
